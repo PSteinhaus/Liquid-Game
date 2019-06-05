@@ -39,9 +39,6 @@ class DirectionMap : public HeightMap
 {
 public:
 	DirectionMap() : HeightMap(0) {}
-	enum Direction : char {
-		NEUTRAL, DOWN_LEFT, DOWN, DOWN_RIGHT, RIGHT, UP_RIGHT, UP, UP_LEFT, LEFT
-	};
 	void setDirection(int x, int y, Direction direction);
 	Direction getDirection(int x, int y) const;
 	static const Direction calcDirection(char dx, char dy);

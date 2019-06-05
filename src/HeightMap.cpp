@@ -128,8 +128,8 @@ void ColorMap::update() {
 				bool moved = false;				// remember that you haven't moved the color yet
 				char localHeight = engine.getHeight(x,y);	// get the height of the color
 				char localTotalHeight = engine.totalHeight(x,y,player);	// and the height of the color + other factors (HeightMap of player and global one)
-				DirectionMap::Direction direction = player->getDirection(x,y);	// check for a forced direction
-				if( direction != DirectionMap::NEUTRAL )						// if true try to move there
+				Direction direction = player->getDirection(x,y);	// check for a forced direction
+				if( direction != NEUTRAL )						// if true try to move there
 				{
 					int dx=0; int dy=0;
 					DirectionMap::calcDxDy(&dx, &dy, direction);			// calculate your destination coordinates based on the given direction
@@ -249,8 +249,8 @@ bool ColorMap::pumpFromIndex(unsigned int i, char& amount, Player* pumpingPlayer
 		}
 	}
 	// if you're not done yet add its neighbours to the list to be checked
-	DirectionMap::Direction direction = pumpingPlayer->getDirection(x,y);	// check if there is a forced direction
-	if( direction == DirectionMap::NEUTRAL )						// if not add all neighbours to the list
+	Direction direction = pumpingPlayer->getDirection(x,y);	// check if there is a forced direction
+	if( direction == NEUTRAL )						// if not add all neighbours to the list
 	{
 		for( int dx = -1; dx <=1; ++dx )
 			for( int dy = -1; dy <=1; ++dy ) {
@@ -285,11 +285,11 @@ void DirectionMap::setDirection(int x, int y, Direction direction) {
 	heights[x+y*engine.WIDTH] = (char)direction;
 }
 
-DirectionMap::Direction DirectionMap::getDirection(int x, int y) const {
-	return static_cast<DirectionMap::Direction>(getHeight(x,y));
+Direction DirectionMap::getDirection(int x, int y) const {
+	return static_cast<Direction>(getHeight(x,y));
 }
 
-const DirectionMap::Direction DirectionMap::calcDirection(char dx, char dy) {
+const Direction DirectionMap::calcDirection(char dx, char dy) {
 	switch(dx) {
 		case -1:
 			switch(dy) {

@@ -32,6 +32,6 @@ public:
 	void setHeight(int x, int y, char height);
 	char getHeight(int x, int y) const;
 	// DirectionMap
-	void setDirection(int x, int y, DirectionMap::Direction direction);
-	DirectionMap::Direction getDirection(int x, int y) const;
+	void setDirection(int x, int y, Direction direction);
+	Direction getDirection(int x, int y) const;
 };

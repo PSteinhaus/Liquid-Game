@@ -14,6 +14,7 @@ Engine::Engine() : turn(0), lastKey(), gameStatus(RUNNING), structures()
 
 	colorMap = new ColorMap();
 	globalHeightMap = new HeightMap(100);
+	roots = new FourDirectionMap();
 	/*
 	for( int x=1; x<WIDTH-1; ++x )
 		for( int y=1; y<HEIGHT-1; ++y )
@@ -30,6 +31,8 @@ Engine::~Engine() {
 	for(int i=0;i<4;++i)
 		delete players[i];
 	delete colorMap;
+	delete globalHeightMap;
+	delete roots;
 }
 
 void 	Engine::addStructure(Structure* structure) {
@@ -204,6 +207,7 @@ void Engine::render() {
 	TCODConsole::root->clear();
 
 	globalHeightMap->render();	// render the world height
+	roots->render();	// render the roots
 	colorMap->render();	// render the fluids
 	for( auto it=structures.begin(); it!=structures.end(); ++it )	// render the structures
 		(*it)->render();
@@ -220,4 +224,20 @@ bool Engine::inMap(int x, int y) const {
 bool Engine::perSecond(float repetitions) const {		// returns true "repetitions" times per second
 	if( repetitions > FPS ) return true;
 	return turn % (unsigned int)(FPS/repetitions) == 0;
+}
+
+bool Engine::checkRootDirection(int x, int y, Direction direction) {
+	return roots->checkDirection( x, y, direction);
+}
+
+void Engine::addRootDirection(int x, int y, Direction direction) {
+	roots->addDirection( x, y, direction);
+}
+
+void Engine::removeRootDirection(int x, int y, Direction direction) {
+	roots->removeDirection( x, y, direction);
+}
+
+void Engine::clearRootField(int x, int y) {
+	roots->clearField(x,y);
 }

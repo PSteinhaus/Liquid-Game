@@ -82,7 +82,7 @@ void Brush::fillAt(int xCenter, int yCenter, Player* player) {
 		}
 }
 
-void Brush::setDirection(int xCenter, int yCenter, Player* player, DirectionMap::Direction direction) {
+void Brush::setDirection(int xCenter, int yCenter, Player* player, Direction direction) {
 	double condition = radiusCondition();
 	// go through all fields inside the set radius
 	for( int x = -(int)radius; x <= (int)(radius); ++x )
@@ -95,6 +95,9 @@ void Brush::setDirection(int xCenter, int yCenter, Player* player, DirectionMap:
 			if( distance > condition ) continue;				// if it's larger than the allowed radius -> skip
 															// else set the direction on this field
 			player->setDirection(xPos,yPos, direction);
+			engine.addRootDirection(xPos,yPos, direction);
+			if( direction == NEUTRAL )
+				engine.clearRootField(xPos,yPos);
 		}
 }
 

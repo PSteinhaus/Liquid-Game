@@ -3,6 +3,7 @@ class Engine
 private:
 	ColorMap* colorMap;
 	HeightMap* globalHeightMap;
+	FourDirectionMap* roots;
 public :
 	static const int  WIDTH  = 1920/16;
 	static const int  HEIGHT = 1080/16;
@@ -41,6 +42,11 @@ public :
 	void	removeStructure(Structure* structure);
 	void	clearLevel();
 	void	loadBitmap(const char* filename);
+	// roots
+	bool checkRootDirection(int x, int y, Direction direction);
+	void addRootDirection(int x, int y, Direction direction);
+	void removeRootDirection(int x, int y, Direction direction);
+	void clearRootField(int x, int y);
 };
 
 extern Engine engine;

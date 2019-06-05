@@ -74,11 +74,11 @@ void Player::setHeight(int x, int y, char height) {
 	heightMap.setHeight(x,y,height);
 }
 
-void Player::setDirection(int x, int y, DirectionMap::Direction direction) {
+void Player::setDirection(int x, int y, Direction direction) {
 	directionMap.setDirection(x,y, direction);
 }
 
-DirectionMap::Direction Player::getDirection(int x, int y) const {
+Direction Player::getDirection(int x, int y) const {
 	return directionMap.getDirection(x,y);
 }
 
