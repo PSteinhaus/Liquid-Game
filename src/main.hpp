@@ -9,7 +9,11 @@ class HeightMap;
 class FourDirectionMap;
 class DirectionMap;
 class Player;
+class Source;
+class Creature;
 #include <vector>
+#include <utility>
+#include <map>
 #include "libtcod.hpp"
 #include <chrono>
 #include "XInput.hpp"
@@ -19,3 +23,5 @@ class Player;
 #include "MultiDirectionMap.hpp"
 #include "Brush.hpp"
 #include "Player.hpp"
+#include "Source.hpp"
+#include "Creature.hpp"

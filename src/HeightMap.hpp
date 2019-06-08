@@ -42,6 +42,8 @@ public:
 	void setDirection(int x, int y, Direction direction);
 	Direction getDirection(int x, int y) const;
 	static const Direction calcDirection(char dx, char dy);
+	static const Direction opposingDirection(Direction direction);
+	static const Direction calcDirectionInverted(char dx, char dy);
 	static void calcDxDy(int* dx, int* dy, Direction direction);	// set *dx and *dy to the correct values based on the given direction (WARNING: y is inverted)
 	static const int getTilePosition(Direction direction);
 };

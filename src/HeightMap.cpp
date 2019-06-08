@@ -289,7 +289,7 @@ Direction DirectionMap::getDirection(int x, int y) const {
 	return static_cast<Direction>(getHeight(x,y));
 }
 
-const Direction DirectionMap::calcDirection(char dx, char dy) {
+const Direction DirectionMap::calcDirectionInverted(char dx, char dy) {
 	switch(dx) {
 		case -1:
 			switch(dy) {
@@ -325,6 +325,65 @@ const Direction DirectionMap::calcDirection(char dx, char dy) {
 	return NEUTRAL;
 }
 
+const Direction DirectionMap::calcDirection(char dx, char dy) {
+	switch(dx) {
+		case -1:
+			switch(dy) {
+				case 1:
+					return DOWN_LEFT;
+				case 0:
+					return LEFT;
+				case -1:
+					return UP_LEFT;
+				default: return NEUTRAL;
+			}
+		case 0:
+			switch(dy) {
+				case 1:
+					return DOWN;
+				case 0:
+					return NEUTRAL;
+				case -1:
+					return UP;
+				default: return NEUTRAL;
+			}
+		case 1:
+			switch(dy) {
+				case 1:
+					return DOWN_RIGHT;
+				case 0:
+					return RIGHT;
+				case -1:
+					return UP_RIGHT;
+				default: return NEUTRAL;
+			}
+	}
+	return NEUTRAL;
+}
+
+const Direction DirectionMap::opposingDirection(Direction direction) {
+	switch(direction) {
+		case UP:
+			return DOWN;
+		case DOWN:
+			return UP;
+		case RIGHT:
+			return LEFT;
+		case LEFT:
+			return RIGHT;
+		case DOWN_RIGHT:
+			return UP_LEFT;
+		case DOWN_LEFT:
+			return UP_RIGHT;
+		case UP_LEFT:
+			return DOWN_RIGHT;
+		case UP_RIGHT:
+			return DOWN_LEFT;
+		default:
+			return NEUTRAL;
+	}
+}
+
 void DirectionMap::calcDxDy(int* dx, int* dy, Direction direction) {
 	switch(direction) {
 		case UP:
@@ -354,7 +413,6 @@ void DirectionMap::calcDxDy(int* dx, int* dy, Direction direction) {
 		default:
 			break;
 	}
-	return;
 }
 
 const int DirectionMap::getTilePosition(Direction direction) {

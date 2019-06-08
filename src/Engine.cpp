@@ -1,6 +1,9 @@
 #include "main.hpp"
 #include <stdlib.h>     /* rand */
 #include <limits>
+#include <algorithm>
+#include <set>
+#include <iostream>
 
 Engine::Engine() : turn(0), lastKey(), gameStatus(RUNNING), structures()
 {
@@ -14,7 +17,9 @@ Engine::Engine() : turn(0), lastKey(), gameStatus(RUNNING), structures()
 
 	colorMap = new ColorMap();
 	globalHeightMap = new HeightMap(100);
-	roots = new FourDirectionMap();
+	rootDirections = new FourDirectionMap();
+
+	addCreature( new SolarTree(30,15) );
 	/*
 	for( int x=1; x<WIDTH-1; ++x )
 		for( int y=1; y<HEIGHT-1; ++y )
@@ -32,7 +37,24 @@ Engine::~Engine() {
 		delete players[i];
 	delete colorMap;
 	delete globalHeightMap;
-	delete roots;
+	delete rootDirections;
+	for( auto it=structures.begin(); it!=structures.end(); it++ )
+		delete (*it);
+	for( auto it=creatures.begin(); it!=creatures.end(); it++ )
+		delete (*it);
+}
+
+void 	Engine::addCreature(Creature* creature) {
+	creatures.push_back(creature);
+}
+
+void	Engine::removeCreature(Creature* creature) {
+	for( auto it = creatures.begin(); it != creatures.end(); ++it ) {
+		if( *it == creature ) {
+			creatures.erase(it);
+			delete creature;
+		}
+	}
 }
 
 void 	Engine::addStructure(Structure* structure) {
@@ -197,6 +219,11 @@ void Engine::update() {
 	for( auto it=structures.begin(); it!=structures.end(); ++it ) {
 		(*it)->update();
 	}
+	if( perSecond(CREATURE_UPDATES_PER_SECOND) ) {
+		for( auto it=creatures.begin(); it!=creatures.end(); ++it ) {
+			(*it)->update();
+		}
+	}
 	if( perSecond(20) ) {
 		// let the liquids flow
 		colorMap->update();
@@ -207,9 +234,11 @@ void Engine::render() {
 	TCODConsole::root->clear();
 
 	globalHeightMap->render();	// render the world height
-	roots->render();	// render the roots
+	rootDirections->render();	// render the roots
 	colorMap->render();	// render the fluids
 	for( auto it=structures.begin(); it!=structures.end(); ++it )	// render the structures
+		(*it)->render();
+	for( auto it=creatures.begin(); it!=creatures.end(); ++it )		// render the creatures
 		(*it)->render();
 	for (int i=0; i<4; ++i) {	// render the cursors
 		players[i]->render();
@@ -226,18 +255,156 @@ bool Engine::perSecond(float repetitions) const {		// returns true "repetitions"
 	return turn % (unsigned int)(FPS/repetitions) == 0;
 }
 
-bool Engine::checkRootDirection(int x, int y, Direction direction) {
-	return roots->checkDirection( x, y, direction);
+template <typename Map>
+bool key_compare (Map const *lhs, Map const *rhs) {
+    return lhs->size() == rhs->size()
+        && std::equal(lhs->begin(), lhs->end(), rhs->begin(), 
+                      [] (auto a, auto b) { return a.first == b.first; });	// this line provides the comparision function for std::equal as a lambda expression
 }
 
+bool Engine::checkRootDirection(int x, int y, Direction direction) {
+	return rootDirections->checkDirection( x, y, direction);
+}
+
+bool Engine::checkRootConnection(int x, int y, Direction direction) const {
+	int dx=0, dy=0;
+	DirectionMap::calcDxDy(&dx,&dy, direction);
+	return rootDirections->checkDirection( x, y, direction) && rootDirections->checkDirection( x+dx, y+dy, DirectionMap::opposingDirection(direction) );
+}
+
+
 void Engine::addRootDirection(int x, int y, Direction direction) {
-	roots->addDirection( x, y, direction);
+	if( !rootAllowed(x,y,direction) ) return;	// check whether this new root would violate a law
+	rootDirections->addDirection( x, y, direction );
+	
+	auto mySources = *getRootSources(x,y);
+	int dx=0, dy=0;
+	DirectionMap::calcDxDy(&dx,&dy, direction);
+	auto otherSources = *getRootSources(x+dx,y+dy);
+		
+	for( auto it=mySources.begin(); it!=mySources.end(); it++ ) {			// update the roots starting from your sources
+		std::cout << "spreading :"<< x <<","<< y <<"\n";
+		(*it).first->spreadFrom(x,y);
+	}
+	for( auto it=otherSources.begin(); it!=otherSources.end(); it++ ) {		// update the roots starting from the other's sources
+		std::cout << "spreading from other :"<< x+dx <<","<< y+dy <<"\n";
+		(*it).first->spreadFrom(x+dx,y+dy);
+	}
 }
 
 void Engine::removeRootDirection(int x, int y, Direction direction) {
-	roots->removeDirection( x, y, direction);
+	rootDirections->removeDirection( x, y, direction);
+	int dx=0, dy=0;
+	DirectionMap::calcDxDy(&dx,&dy, direction);
+	// because you just severed a connection
+	auto mySources = *getRootSources(x,y);
+	for( auto it=mySources.begin(); it!=mySources.end(); it++ ) {	// update the roots starting from
+		(*it).first->killFrom(x,y);									// this field
+		(*it).first->killFrom(x+dx,y+dy);							// and the other
+	}
 }
 
 void Engine::clearRootField(int x, int y) {
-	roots->clearField(x,y);
+	for( int i=0; i<ROOT_DIRECTIONS; i++ ) {
+		Direction direction = rootIndexToDirection(i);
+		removeRootDirection(x, y, direction);
+	}
+}
+
+Direction Engine::rootIndexToDirection(int i) const {
+	return rootDirections->indexToDirection(i);
+}
+
+std::map<Source*,int>* Engine::getRootSources(int x, int y) {
+	return &rootSources[x+y*WIDTH];
+}
+
+float Engine::getRootCharge(int x, int y) {
+	float charge = 0;
+	auto sources = getRootSources(x,y);
+	for( auto it=sources->begin(); it!=sources->end(); it++ )	// add the charges of all sources
+		charge += (*it).first->getCharge();
+
+	rootCharges[x+y*WIDTH] = charge;				// set rootCharges, so you can re-read the value more easily later
+	return charge;
+}
+
+float Engine::getLastRootCharge(int x, int y) const {
+	return rootCharges[x+y*WIDTH];
+}
+
+void Engine::rootIterationBegin(int* x_ptr, int* y_ptr) {	// starts a search for connected roots at *x_ptr,*y_ptr
+	std::fill(boolArray, boolArray+(WIDTH*HEIGHT), 0);
+	boolArray[(*x_ptr)+(*y_ptr)*WIDTH] = true;
+	indexArray[0] = (*x_ptr)+(*y_ptr)*WIDTH;
+	currentIndex = 0;
+	lastIndex = 0;
+	{
+		int i = 0;
+		Direction currentDirection = rootDirections->indexToDirection(i);
+		while( currentDirection != NEUTRAL ) {				// go through all directions
+			int dx = 0, dy = 0;
+			DirectionMap::calcDxDy( &dx,&dy, currentDirection );
+			int index = (*x_ptr + dx) + (*y_ptr + dy)*WIDTH;
+			if( !boolArray[index] && checkRootConnection( *x_ptr, *y_ptr, currentDirection) ) {	// if there is an unfound connection add the connected field to the list
+				indexArray[++lastIndex] = index;
+				boolArray[index] = true;
+			}
+			currentDirection = rootDirections->indexToDirection(++i);
+		}
+	}
+	currentIndex++;
+}
+
+void Engine::rootIterationNext(int* x_ptr, int* y_ptr) {	// sets *x_ptr,*y_ptr to the next field in the search for connected roots
+	// set the values
+	if( currentIndex <= lastIndex ) {
+		*x_ptr = indexArray[currentIndex] % WIDTH;
+		*y_ptr = indexArray[currentIndex] / WIDTH;
+	} else {
+		*x_ptr = rootIterationEnd();
+		*y_ptr = rootIterationEnd();
+	}
+	// search for more fields
+	int x = indexArray[currentIndex] % WIDTH;
+	int y = indexArray[currentIndex] / WIDTH;
+	int i = 0;
+	Direction currentDirection = rootDirections->indexToDirection(i);
+	while( currentDirection != NEUTRAL ) {				// go through all directions
+		int dx = 0, dy = 0;
+		DirectionMap::calcDxDy( &dx,&dy, currentDirection );
+		int index = (x + dx) + (y + dy)*WIDTH;
+		if( !boolArray[index] && checkRootConnection( x, y, currentDirection) ) {	// if there is an unfound connection add the connected field to the list
+			indexArray[++lastIndex] = index;
+			boolArray[index] = true;
+		}
+		currentDirection = rootDirections->indexToDirection(++i);
+	}
+	currentIndex++;
+}
+
+int Engine::rootIterationEnd() const {							// returns -1
+	return -1;
+}
+
+Direction Engine::findRootNeighbour(int x, int y) const {
+	int i = 0;
+	Direction currentDirection = engine.rootIndexToDirection(i);
+	while( currentDirection != NEUTRAL ) {						// go through all directions
+		if( engine.checkRootDirection( x, y, currentDirection) ) {		// if you find a neighbour return the direction where your found him
+			return currentDirection;
+		}
+		currentDirection = engine.rootIndexToDirection(++i);
+	}
+	return NEUTRAL;
+}
+
+bool 	Engine::rootAllowed(int x, int y, Direction direction) {
+	int dx=0, dy=0;
+	DirectionMap::calcDxDy(&dx,&dy, direction);
+	if( rootDirections->checkDirection( x+dx, y+dy, DirectionMap::opposingDirection(direction) ) ) {	// if this root would connect to a neighbour field
+		// check whether these two fields have the same sources, if true they are already connected and the new root would form a circle (forbidden)
+		return !key_compare( getRootSources(x,y), getRootSources(x+dx,y+dy) );	// if they're different everything is fine
+	}
+	return true;
 }

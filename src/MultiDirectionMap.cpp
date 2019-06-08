@@ -24,6 +24,17 @@ const int FourDirectionMap::directionToIndex(Direction direction) {
 	return -1;
 }
 
+const Direction FourDirectionMap::indexToDirection(int index) {
+	switch(index) {
+		case 0: return UP;
+		case 1: return LEFT;
+		case 2: return DOWN;
+		case 3: return RIGHT;
+		default: return NEUTRAL;
+	}
+	return NEUTRAL;
+}
+
 bool FourDirectionMap::checkDirection(int x, int y, Direction direction)
 {
 	int index = directionToIndex(direction);
@@ -136,10 +147,19 @@ void FourDirectionMap::render() {
 	for (int x=0; x<engine.WIDTH; ++x)
 		for (int y=0; y<engine.HEIGHT; ++y) {
 			TCOD_console_set_char( NULL, x, y, getTilePosition(x,y) );
-			//TCOD_console_set_char_foreground( NULL , x, y, {10,10,10} );
+			float greyValue = 255 * engine.getRootCharge(x,y);
+			unsigned char greyVal = greyValue>255 ? 255 : (unsigned char) greyValue;
+			TCOD_console_set_char_foreground( NULL , x, y, {greyVal,greyVal,greyVal} );
+			// DEBUG
+			/*
+			auto sources = engine.getRootSources(x,y);
+			if( sources->begin() != sources->end() ) {
+				int distance = sources->begin()->second;
+				TCOD_console_set_char_background( NULL , x, y, {0,(unsigned char)(distance*30),0}, TCOD_BKGND_SET );
 			}
+			*/
+		}
 }
-
 
 
 EightDirectionMap::EightDirectionMap() {

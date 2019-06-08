@@ -101,5 +101,5 @@ void Player::useFillBrush() {
 }
 
 void Player::useDirectionBrush(char dx, char dy) {
-	brush.setDirection((int)cursorX,(int)cursorY, this, DirectionMap::calcDirection(dx,dy) );
+	brush.setDirection((int)cursorX,(int)cursorY, this, DirectionMap::calcDirectionInverted(dx,dy) );
 }

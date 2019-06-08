@@ -17,6 +17,7 @@ public:
 	FourDirectionMap();
 	virtual ~FourDirectionMap() = default;
 	static const int directionToIndex(Direction direction);
+	static const Direction indexToDirection(int index);
 	bool checkDirection(int x, int y, Direction direction);
 	void addDirection(int x, int y, Direction direction);
 	void removeDirection(int x, int y, Direction direction);
