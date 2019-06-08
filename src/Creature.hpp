@@ -14,10 +14,13 @@ class Tree : public Creature
 protected:
 	static constexpr int STD_MAX_ROOT_LENGTH = 14;
 	static constexpr int STD_MAX_ROOT_AMOUNT = 14*14;
-	static constexpr char STD_FLUID_NEEDED_FOR_GROWTH = 3;
+	static constexpr char STD_FLUID_NEEDED_FOR_GROWTH = 2;
+	static constexpr char STD_FLUID_NEEDED_FOR_ATTRACTION = 3;
 	int maxRootLength = STD_MAX_ROOT_LENGTH;
 	int maxRootAmount = STD_MAX_ROOT_AMOUNT;
+	int rootAmount;
 	char fluidNeededForGrowth = STD_FLUID_NEEDED_FOR_GROWTH;
+	char fluidNeededForAttraction = STD_FLUID_NEEDED_FOR_ATTRACTION;
 	Source* source;
 	void growRoot();
 public:

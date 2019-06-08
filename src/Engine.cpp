@@ -283,11 +283,11 @@ void Engine::addRootDirection(int x, int y, Direction direction) {
 	auto otherSources = *getRootSources(x+dx,y+dy);
 		
 	for( auto it=mySources.begin(); it!=mySources.end(); it++ ) {			// update the roots starting from your sources
-		std::cout << "spreading :"<< x <<","<< y <<"\n";
+		//std::cout << "spreading :"<< x <<","<< y <<"\n";
 		(*it).first->spreadFrom(x,y);
 	}
 	for( auto it=otherSources.begin(); it!=otherSources.end(); it++ ) {		// update the roots starting from the other's sources
-		std::cout << "spreading from other :"<< x+dx <<","<< y+dy <<"\n";
+		//std::cout << "spreading from other :"<< x+dx <<","<< y+dy <<"\n";
 		(*it).first->spreadFrom(x+dx,y+dy);
 	}
 }

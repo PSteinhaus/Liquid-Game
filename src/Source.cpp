@@ -99,12 +99,12 @@ void Source::spread() {
 		// find your pair<Source*,int>
 		int x0 = indexArray[currentIndex] % Engine::WIDTH;
 		int y0 = indexArray[currentIndex] / Engine::WIDTH;
-		std::cout << "checking distance at :"<< x0 <<","<< y0 <<"\n";
+		//std::cout << "checking distance at :"<< x0 <<","<< y0 <<"\n";
 		int* myDistance = myDistanceAt(x0,y0);
 		if( myDistance==NULL ) 				// you're not there... so you can't spread from there
 			continue;
 		else {								// if you're there add all neighbours that are further away
-			std::cout << "really spreading\n";
+			//std::cout << "really spreading\n";
 			int distance = *myDistance;
 			for( int i=0; i<engine.ROOT_DIRECTIONS; i++ ) {
 				Direction direction = engine.rootIndexToDirection(i);	// check all directions
@@ -145,7 +145,7 @@ int* Source::myDistanceAt(int x0, int y0) {
 	try {
 		return &(engine.getRootSources(x0,y0)->at(this));
 	} catch (std::out_of_range const & ex) {
-		std::cout << "no distance\n";
+		//std::cout << "no distance\n";
 		return NULL;
 	}
 }
