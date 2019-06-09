@@ -6,6 +6,7 @@ FourDirectionMap::FourDirectionMap() {
 }
 
 void FourDirectionMap::clear(){
+	std::lock_guard<std::mutex> lockGuard(engine.rootDirectionMutex);
 	for(int i=0; i<Engine::WIDTH*Engine::HEIGHT; i++) {
 		for(int j=0; j<4; j++)
 			directions[i][j] = false;
@@ -39,18 +40,21 @@ bool FourDirectionMap::checkDirection(int x, int y, Direction direction)
 {
 	int index = directionToIndex(direction);
 	if( index == -1 ) return false;
+	std::lock_guard<std::mutex> lockGuard(engine.rootDirectionMutex);
 	return directions[x+y*Engine::WIDTH][directionToIndex(direction)];
 }
 
 void FourDirectionMap::addDirection(int x, int y, Direction direction) {
 	int index = directionToIndex(direction);
 	if( index == -1 ) return;
+	std::lock_guard<std::mutex> lockGuard(engine.rootDirectionMutex);
 	directions[x+y*Engine::WIDTH][directionToIndex(direction)] = true;
 }
 
 void FourDirectionMap::removeDirection(int x, int y, Direction direction) {
 	int index = directionToIndex(direction);
 	if( index == -1 ) return;
+	std::lock_guard<std::mutex> lockGuard(engine.rootDirectionMutex);
 	directions[x+y*Engine::WIDTH][directionToIndex(direction)] = false;
 }
 
@@ -151,13 +155,14 @@ void FourDirectionMap::render() {
 			unsigned char greyVal = greyValue>255 ? 255 : (unsigned char) greyValue;
 			TCOD_console_set_char_foreground( NULL , x, y, {greyVal,greyVal,greyVal} );
 			// DEBUG
-			/*
+			
 			auto sources = engine.getRootSources(x,y);
+			engine.lockRootSource(x,y);
 			if( sources->begin() != sources->end() ) {
 				int distance = sources->begin()->second;
-				TCOD_console_set_char_background( NULL , x, y, {0,(unsigned char)(distance*30),0}, TCOD_BKGND_SET );
+				TCOD_console_set_char_background( NULL , x, y, {(unsigned char)(distance*30),0,0}, TCOD_BKGND_SET );
 			}
-			*/
+			engine.unlockRootSource(x,y);
 		}
 }
 

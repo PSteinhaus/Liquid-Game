@@ -14,6 +14,8 @@ class Creature;
 #include <vector>
 #include <utility>
 #include <map>
+#include <mutex>
+//#include <shared_mutex>
 #include "libtcod.hpp"
 #include <chrono>
 #include "XInput.hpp"

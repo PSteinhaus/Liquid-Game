@@ -10,8 +10,7 @@ Source::Source(int x, int y) : x(x), y(y), charge(0) {
 	addMyPairTo(x,y,0);
 	// create roots into all directions
 	for( int i=0; i<engine.ROOT_DIRECTIONS; i++ ) {
-		Direction direction = engine.rootIndexToDirection(i);
-		engine.addRootDirection(x,y,direction);
+		engine.addRootDirection(x,y,engine.rootIndexToDirection(i));
 	}
 }
 
@@ -40,6 +39,7 @@ void Source::setToPosition(int* x_ptr, int* y_ptr) {
 void Source::spreadFrom(int x, int y) {
 	// find all fields with roots that you are connected to and add yourself to the sources listed there
 	// while doing so, document the distance of the field to you and only spread further into fields that are further away
+
 	std::fill(boolArray, boolArray+(Engine::WIDTH*Engine::HEIGHT), 0);
 	boolArray[x+y*Engine::WIDTH] = true;
 	indexArray[0] = x+y*Engine::WIDTH;
@@ -50,6 +50,7 @@ void Source::spreadFrom(int x, int y) {
 void Source::killFrom(int xStart, int yStart) {
 	// find all fields with roots that you are connected to and delete yourself from the sources listed there
 	// while doing so, only spread further into fields that are further away
+
 	std::fill(boolArray, boolArray+(Engine::WIDTH*Engine::HEIGHT), 0);
 	boolArray[xStart+yStart*Engine::WIDTH] = true;
 	indexArray[0] = xStart+yStart*Engine::WIDTH;
@@ -59,7 +60,7 @@ void Source::killFrom(int xStart, int yStart) {
 		int x = indexArray[currentIndex] % Engine::WIDTH;
 		int y = indexArray[currentIndex] / Engine::WIDTH;
 		int* myDistance = myDistanceAt(x,y);
-		bool deleteSelf = true;					// whether or not to delete this source from the current field
+		bool stillConnected = false;			// whether or not to delete this source from the current field
 		if( myDistance==NULL ) 					// you're not there... so you can't spread from there
 			continue;
 		else {								// if you're there add all neighbours that are further away
@@ -76,14 +77,15 @@ void Source::killFrom(int xStart, int yStart) {
 						if( *myDistanceThere > distance ) {				// if the distance increases
 							indexArray[++lastIndex] = index;	// add the field to the killList
 						} else {										// if the distance doesn't increase in that direction you've just found an edge
-							deleteSelf = false;							// then you yourself are still connected, so remember to not kill yourself please
+							stillConnected = true;							// then you yourself are still connected, so remember to not kill yourself please
 						}
 					}
 				}
 			}
 		}
-		if( deleteSelf )
-			deleteMyPairAt(x,y);				// delete your pair there
+		if( stillConnected )
+			break;
+		deleteMyPairAt(x,y);				// delete your pair there
 	}
 
 	// make sure you didn't delete the true source by accident
@@ -134,18 +136,33 @@ void Source::spread() {
 }
 
 void Source::deleteMyPairAt(int x, int y) {
+	engine.lockRootSource(x,y);
+	//std::cout << "rootSource locked in deletePair\n";
 	engine.getRootSources(x,y)->erase(this);
+	engine.unlockRootSource(x,y);
+	//std::cout << "rootSource released in deletePair\n";
 }
 
 void Source::addMyPairTo(int x, int y, int distance) {
+	engine.lockRootSource(x,y);
+	//std::cout << "rootSource locked in addPair\n";
 	engine.getRootSources(x,y)->insert({this,distance});
+	engine.unlockRootSource(x,y);
+	//std::cout << "rootSource released in addPair\n";
 }
 
 int* Source::myDistanceAt(int x0, int y0) {
 	try {
-		return &(engine.getRootSources(x0,y0)->at(this));
+		engine.lockRootSource(x,y);
+		//std::cout << "rootSource locked in DistanceAt\n";
+		int* distance = &(engine.getRootSources(x0,y0)->at(this));
+		engine.unlockRootSource(x,y);
+		//std::cout << "rootSource unlocked in DistanceAt\n";
+		return distance;
 	} catch (std::out_of_range const & ex) {
 		//std::cout << "no distance\n";
+		engine.unlockRootSource(x,y);
+		//std::cout << "rootSource unlocked in DistanceAt\n";
 		return NULL;
 	}
 }

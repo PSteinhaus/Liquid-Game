@@ -18,7 +18,6 @@ protected:
 	static constexpr char STD_FLUID_NEEDED_FOR_ATTRACTION = 3;
 	int maxRootLength = STD_MAX_ROOT_LENGTH;
 	int maxRootAmount = STD_MAX_ROOT_AMOUNT;
-	int rootAmount;
 	char fluidNeededForGrowth = STD_FLUID_NEEDED_FOR_GROWTH;
 	char fluidNeededForAttraction = STD_FLUID_NEEDED_FOR_ATTRACTION;
 	Source* source;

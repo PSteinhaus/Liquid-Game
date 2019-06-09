@@ -13,6 +13,7 @@ private:
 	// roots
 	FourDirectionMap* rootDirections;
 	std::map<Source*,int> rootSources [WIDTH*HEIGHT];
+	std::mutex rootSourceMutex [WIDTH*HEIGHT];
 	float rootCharges [WIDTH*HEIGHT];
 	std::vector<Creature*> creatures;
 	// stuff for the pump/pathfinding-algorithm
@@ -29,6 +30,8 @@ public :
 		EXIT
 	} gameStatus;
 	std::vector<Structure*> structures;
+	std::mutex rootMutex;										// if aquired this mutex gives a thread the right to alter/or read the root-system
+	std::mutex rootDirectionMutex;						// if aquired this mutex gives a thread the right to alter/or read the rootDirection-system
 
 	Engine();
 	~Engine();
@@ -56,9 +59,11 @@ public :
 	void	clearLevel();
 	void	loadBitmap(const char* filename);
 	// roots
-	bool 	checkRootConnection(int x, int y, Direction direction) const;
+	bool 	checkRootConnection(int x, int y, Direction direction);
 	bool 	checkRootDirection(int x, int y, Direction direction);
+	void 	addRootDirectionThread(int x, int y, Direction direction);
 	void 	addRootDirection(int x, int y, Direction direction);
+	void 	removeRootDirectionThread(int x, int y, Direction direction);
 	void 	removeRootDirection(int x, int y, Direction direction);
 	void 	clearRootField(int x, int y);
 	Direction rootIndexToDirection(int i) const;
@@ -70,6 +75,8 @@ public :
 	int 	rootIterationEnd() const;					// returns -1
 	Direction findRootNeighbour(int x, int y) const;
 	bool 	rootAllowed(int x, int y, Direction direction); // whether a root starting from x,y in the specified direction would not create a circle (circles are forbidden)
+	void 	lockRootSource(int x, int y);
+	void 	unlockRootSource(int x, int y);
 };
 
 extern Engine engine;

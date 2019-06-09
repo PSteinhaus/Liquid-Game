@@ -1,5 +1,6 @@
 #include "main.hpp"
 #include <stdlib.h>
+#include <iostream>
 
 Creature::Creature(int x, int y) : x(x), y(y) {}
 
@@ -12,15 +13,19 @@ Tree::~Tree() {
 }
 
 void Tree::growRoot() {
+	if( !engine.rootMutex.try_lock() ) return;		// if you would have to wait for access to the rootSources-system give up right away
+	//std::cout << "rootMutex aquired in growRoot\n";
 	// find the edges of your root-network and add a root at a random edge-point
 	static std::vector<unsigned int> edgeIndexes;
 	static std::vector<unsigned int> outerEdgeIndexes;
 	edgeIndexes.clear();
 	outerEdgeIndexes.clear();
 	int xPos=x, yPos=y;
+	int rootsChecked = 0;
 	// find the edges
 	for( engine.rootIterationBegin(&xPos,&yPos); xPos!=engine.rootIterationEnd(); engine.rootIterationNext(&xPos,&yPos) ) {
-		if( *source->myDistanceAt(xPos,yPos) > maxRootLength ) break;	// if you're starting to look outside of your reach stop
+		if( rootsChecked >= maxRootAmount ) goto done;					// if you've already found enough roots inside of your reach stop completely, because you already have enough
+		//if( *source->myDistanceAt(xPos,yPos) > maxRootLength ) break;	// if you're starting to look outside of your reach stop searching for new free spots
 		int i = 0;
 		bool fieldAdded = false;
 		bool fieldAddedOuter = false;
@@ -50,11 +55,14 @@ void Tree::growRoot() {
 			}
 			currentDirection = engine.rootIndexToDirection(++i);
 		}
+		rootsChecked++;
 	}
 	// grow the root from a random position
+	{
 	int edgeCount = edgeIndexes.size();
 	int outerEdgeCount = outerEdgeIndexes.size();
-	if( edgeCount == 0 && outerEdgeCount == 0 ) return;
+	if( edgeCount == 0 && outerEdgeCount == 0 ) goto done;
+	std::cout << "free places for roots found\n";
 	unsigned int chosenIndex;
 	int chosenX;
 	int chosenY;
@@ -73,7 +81,7 @@ void Tree::growRoot() {
 					engine.addRootDirection( chosenX, chosenY, randomDirection );		// add it if you find it missing
 					engine.changeHeight(chosenX, chosenY, -fluidNeededForGrowth);		// decrease the fluid level as a cost for the player
 					edgeCount--;
-					rootAmount++;
+					std::cout << "root grown\n";
 					break;
 				}
 		}
@@ -94,11 +102,15 @@ void Tree::growRoot() {
 					engine.addRootDirection( chosenX+dx, chosenY+dy, opposingDirection );	// add it if you find it missing
 					engine.changeHeight(chosenX+dx, chosenY+dy, -fluidNeededForGrowth);		// decrease the fluid level as a cost for the player
 					outerEdgeCount--;
-					rootAmount++;
+					std::cout << "root grown\n";
 					break;
 				}
 		}
 	}
+	}
+	done:
+	engine.rootMutex.unlock();
+	//std::cout << "rootMutex released in growRoot\n";
 }
 
 SolarTree::SolarTree(int x, int y, float chargeProduction) : Tree(x,y), chargeProduction(chargeProduction) {}
@@ -107,10 +119,10 @@ SolarTree::~SolarTree() {}
 
 void SolarTree::update() {
 	source->increaseCharge( chargeProduction / Engine::CREATURE_UPDATES_PER_SECOND );
-	if( rootAmount<maxRootAmount && rand() % (int)(Engine::CREATURE_UPDATES_PER_SECOND) != 0 ) growRoot();
+	if( rand() % (int)(Engine::CREATURE_UPDATES_PER_SECOND) != 0 ) growRoot();
 }
 
 void SolarTree::render() const {
-	TCOD_console_set_char( NULL, x, y, 'o' );
+	//TCOD_console_set_char( NULL, x, y, 'o' );
 	//TCOD_console_set_char_foreground( NULL , x, y, {255,255,255} );
 }

@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <set>
 #include <iostream>
+#include <thread>
 
 Engine::Engine() : turn(0), lastKey(), gameStatus(RUNNING), structures()
 {
@@ -19,7 +20,8 @@ Engine::Engine() : turn(0), lastKey(), gameStatus(RUNNING), structures()
 	globalHeightMap = new HeightMap(100);
 	rootDirections = new FourDirectionMap();
 
-	addCreature( new SolarTree(30,15) );
+	addCreature( new SolarTree(15,45) );
+	addCreature( new SolarTree(5,45) );
 	/*
 	for( int x=1; x<WIDTH-1; ++x )
 		for( int y=1; y<HEIGHT-1; ++y )
@@ -266,42 +268,67 @@ bool Engine::checkRootDirection(int x, int y, Direction direction) {
 	return rootDirections->checkDirection( x, y, direction);
 }
 
-bool Engine::checkRootConnection(int x, int y, Direction direction) const {
+bool Engine::checkRootConnection(int x, int y, Direction direction) {
 	int dx=0, dy=0;
 	DirectionMap::calcDxDy(&dx,&dy, direction);
 	return rootDirections->checkDirection( x, y, direction) && rootDirections->checkDirection( x+dx, y+dy, DirectionMap::opposingDirection(direction) );
 }
 
-
 void Engine::addRootDirection(int x, int y, Direction direction) {
-	if( !rootAllowed(x,y,direction) ) return;	// check whether this new root would violate a law
+	std::thread rootAdditionThread(&Engine::addRootDirectionThread, this, x,y,direction);
+	rootAdditionThread.detach();
+}
+
+void Engine::addRootDirectionThread(int x, int y, Direction direction) {
+	rootMutex.lock();
+	std::cout << "rootMutex aquired\n";
+	if( !rootAllowed(x,y,direction) ) {
+		rootMutex.unlock();
+		return;	// check whether this new root would violate a law
+	}
 	rootDirections->addDirection( x, y, direction );
-	
 	auto mySources = *getRootSources(x,y);
 	int dx=0, dy=0;
 	DirectionMap::calcDxDy(&dx,&dy, direction);
 	auto otherSources = *getRootSources(x+dx,y+dy);
 		
 	for( auto it=mySources.begin(); it!=mySources.end(); it++ ) {			// update the roots starting from your sources
-		//std::cout << "spreading :"<< x <<","<< y <<"\n";
+		std::cout << "spreading :"<< x <<","<< y <<"\n";
+		//std::thread threadHere(&Source::spreadFrom, (*it).first, x,y);
+		//threadHere.detach();
 		(*it).first->spreadFrom(x,y);
 	}
 	for( auto it=otherSources.begin(); it!=otherSources.end(); it++ ) {		// update the roots starting from the other's sources
-		//std::cout << "spreading from other :"<< x+dx <<","<< y+dy <<"\n";
+		std::cout << "spreading from other :"<< x+dx <<","<< y+dy <<"\n";
+		//std::thread threadThere(&Source::spreadFrom, (*it).first, x+dx,y+dy);
+		//threadThere.detach();
 		(*it).first->spreadFrom(x+dx,y+dy);
 	}
+	rootMutex.unlock();
+	std::cout << "rootMutex released\n";
 }
 
 void Engine::removeRootDirection(int x, int y, Direction direction) {
+	std::thread rootDeletionThread(&Engine::removeRootDirectionThread, this, x,y,direction);
+	rootDeletionThread.detach();
+}
+
+void Engine::removeRootDirectionThread(int x, int y, Direction direction) {
+	rootMutex.lock();
 	rootDirections->removeDirection( x, y, direction);
 	int dx=0, dy=0;
 	DirectionMap::calcDxDy(&dx,&dy, direction);
 	// because you just severed a connection
 	auto mySources = *getRootSources(x,y);
 	for( auto it=mySources.begin(); it!=mySources.end(); it++ ) {	// update the roots starting from
+		//std::thread threadHere (&Source::killFrom, (*it).first, x,y);
+		//std::thread threadThere(&Source::killFrom, (*it).first, x+dx,y+dy);
+		//threadHere.detach();
+		//threadThere.detach();
 		(*it).first->killFrom(x,y);									// this field
 		(*it).first->killFrom(x+dx,y+dy);							// and the other
 	}
+	rootMutex.unlock();
 }
 
 void Engine::clearRootField(int x, int y) {
@@ -321,11 +348,15 @@ std::map<Source*,int>* Engine::getRootSources(int x, int y) {
 
 float Engine::getRootCharge(int x, int y) {
 	float charge = 0;
-	auto sources = getRootSources(x,y);
-	for( auto it=sources->begin(); it!=sources->end(); it++ )	// add the charges of all sources
-		charge += (*it).first->getCharge();
-
-	rootCharges[x+y*WIDTH] = charge;				// set rootCharges, so you can re-read the value more easily later
+	if( rootMutex.try_lock() ) {				// try to access the holy rootSources-system
+		auto sources = getRootSources(x,y);
+		for( auto it=sources->begin(); it!=sources->end(); it++ )	// add the charges of all sources
+			charge += (*it).first->getCharge();
+		rootMutex.unlock();
+		rootCharges[x+y*WIDTH] = charge;				// set rootCharges, so you can re-read the value more easily later
+	} else {										// if you can't
+		charge = getLastRootCharge(x,y);			// just use the old charge
+	}
 	return charge;
 }
 
@@ -402,9 +433,22 @@ Direction Engine::findRootNeighbour(int x, int y) const {
 bool 	Engine::rootAllowed(int x, int y, Direction direction) {
 	int dx=0, dy=0;
 	DirectionMap::calcDxDy(&dx,&dy, direction);
-	if( rootDirections->checkDirection( x+dx, y+dy, DirectionMap::opposingDirection(direction) ) ) {	// if this root would connect to a neighbour field
+	if( checkRootDirection( x+dx, y+dy, DirectionMap::opposingDirection(direction) ) ) {	// if this root would connect to a neighbour field
 		// check whether these two fields have the same sources, if true they are already connected and the new root would form a circle (forbidden)
-		return !key_compare( getRootSources(x,y), getRootSources(x+dx,y+dy) );	// if they're different everything is fine
+		lockRootSource(x,y);
+		lockRootSource(x+dx,y+dy);
+		bool allowed = !key_compare( getRootSources(x,y), getRootSources(x+dx,y+dy) );	// if they're different everything is fine
+		unlockRootSource(x,y);
+		unlockRootSource(x+dx,y+dy);
+		return allowed;
 	}
 	return true;
+}
+
+void 	Engine::lockRootSource(int x, int y) {
+	rootSourceMutex[x+y*WIDTH].lock();
+}
+
+void 	Engine::unlockRootSource(int x, int y) {
+	rootSourceMutex[x+y*WIDTH].unlock();
 }
