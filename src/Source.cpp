@@ -57,9 +57,9 @@ void Source::killFrom(int xStart, int yStart) {
 	lastIndex = 0;
 	for( unsigned int currentIndex=0; currentIndex <= lastIndex; currentIndex++ ) {
 		// find your pair<Source*,int>
-		int x = indexArray[currentIndex] % Engine::WIDTH;
-		int y = indexArray[currentIndex] / Engine::WIDTH;
-		int* myDistance = myDistanceAt(x,y);
+		int x0 = indexArray[currentIndex] % Engine::WIDTH;
+		int y0 = indexArray[currentIndex] / Engine::WIDTH;
+		int* myDistance = myDistanceAt(x0,y0);
 		bool stillConnected = false;			// whether or not to delete this source from the current field
 		if( myDistance==NULL ) 					// you're not there... so you can't spread from there
 			continue;
@@ -69,10 +69,10 @@ void Source::killFrom(int xStart, int yStart) {
 				Direction direction = engine.rootIndexToDirection(i);	// check all directions
 				int dx=0,dy=0;
 				DirectionMap::calcDxDy(&dx,&dy,direction);
-				int index = (x+dx)+(y+dy)*Engine::WIDTH;
-				if( !boolArray[index] && engine.checkRootConnection(x,y,direction) ) {		// if there is a connection to that field
+				int index = (x0+dx)+(y0+dy)*Engine::WIDTH;
+				if( !boolArray[index] && engine.checkRootConnection(x0,y0,direction) ) {		// if there is a connection to that field
 					boolArray[index] = true;
-					int* myDistanceThere = myDistanceAt(x+dx,y+dy);
+					int* myDistanceThere = myDistanceAt(x0+dx,y0+dy);
 					if( myDistanceThere ) {									// check if you have a pair there
 						if( *myDistanceThere > distance ) {				// if the distance increases
 							indexArray[++lastIndex] = index;	// add the field to the killList
@@ -85,12 +85,13 @@ void Source::killFrom(int xStart, int yStart) {
 		}
 		if( stillConnected )
 			break;
-		deleteMyPairAt(x,y);				// delete your pair there
+		deleteMyPairAt(x0,y0);				// delete your pair there
 	}
 
 	// make sure you didn't delete the true source by accident
-	if( xStart == this->x && xStart == this->x )
+	if( xStart == this->x && yStart == this->y )
 		addMyPairTo(xStart,yStart,0);
+		
 }
 
 void Source::spread() {

@@ -25,7 +25,7 @@ void Tree::growRoot() {
 	// find the edges
 	for( engine.rootIterationBegin(&xPos,&yPos); xPos!=engine.rootIterationEnd(); engine.rootIterationNext(&xPos,&yPos) ) {
 		if( rootsChecked >= maxRootAmount ) goto done;					// if you've already found enough roots inside of your reach stop completely, because you already have enough
-		//if( *source->myDistanceAt(xPos,yPos) > maxRootLength ) break;	// if you're starting to look outside of your reach stop searching for new free spots
+		if( *source->myDistanceAt(xPos,yPos) > maxRootLength ) break;	// if you're starting to look outside of your reach stop searching for new free spots
 		int i = 0;
 		bool fieldAdded = false;
 		bool fieldAddedOuter = false;
@@ -62,7 +62,7 @@ void Tree::growRoot() {
 	int edgeCount = edgeIndexes.size();
 	int outerEdgeCount = outerEdgeIndexes.size();
 	if( edgeCount == 0 && outerEdgeCount == 0 ) goto done;
-	std::cout << "free places for roots found\n";
+	//std::cout << "free places for roots found\n";
 	unsigned int chosenIndex;
 	int chosenX;
 	int chosenY;
@@ -81,7 +81,7 @@ void Tree::growRoot() {
 					engine.addRootDirection( chosenX, chosenY, randomDirection );		// add it if you find it missing
 					engine.changeHeight(chosenX, chosenY, -fluidNeededForGrowth);		// decrease the fluid level as a cost for the player
 					edgeCount--;
-					std::cout << "root grown\n";
+					//std::cout << "root grown\n";
 					break;
 				}
 		}
@@ -102,7 +102,7 @@ void Tree::growRoot() {
 					engine.addRootDirection( chosenX+dx, chosenY+dy, opposingDirection );	// add it if you find it missing
 					engine.changeHeight(chosenX+dx, chosenY+dy, -fluidNeededForGrowth);		// decrease the fluid level as a cost for the player
 					outerEdgeCount--;
-					std::cout << "root grown\n";
+					//std::cout << "root grown\n";
 					break;
 				}
 		}
@@ -123,6 +123,6 @@ void SolarTree::update() {
 }
 
 void SolarTree::render() const {
-	//TCOD_console_set_char( NULL, x, y, 'o' );
+	TCOD_console_set_char( NULL, x, y, 'o' );
 	//TCOD_console_set_char_foreground( NULL , x, y, {255,255,255} );
 }

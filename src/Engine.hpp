@@ -31,7 +31,6 @@ public :
 	} gameStatus;
 	std::vector<Structure*> structures;
 	std::mutex rootMutex;										// if aquired this mutex gives a thread the right to alter/or read the root-system
-	std::mutex rootDirectionMutex;						// if aquired this mutex gives a thread the right to alter/or read the rootDirection-system
 
 	Engine();
 	~Engine();

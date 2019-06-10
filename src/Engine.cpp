@@ -281,7 +281,7 @@ void Engine::addRootDirection(int x, int y, Direction direction) {
 
 void Engine::addRootDirectionThread(int x, int y, Direction direction) {
 	rootMutex.lock();
-	std::cout << "rootMutex aquired\n";
+	//std::cout << "rootMutex aquired\n";
 	if( !rootAllowed(x,y,direction) ) {
 		rootMutex.unlock();
 		return;	// check whether this new root would violate a law
@@ -293,19 +293,19 @@ void Engine::addRootDirectionThread(int x, int y, Direction direction) {
 	auto otherSources = *getRootSources(x+dx,y+dy);
 		
 	for( auto it=mySources.begin(); it!=mySources.end(); it++ ) {			// update the roots starting from your sources
-		std::cout << "spreading :"<< x <<","<< y <<"\n";
+		//std::cout << "spreading :"<< x <<","<< y <<"\n";
 		//std::thread threadHere(&Source::spreadFrom, (*it).first, x,y);
 		//threadHere.detach();
 		(*it).first->spreadFrom(x,y);
 	}
 	for( auto it=otherSources.begin(); it!=otherSources.end(); it++ ) {		// update the roots starting from the other's sources
-		std::cout << "spreading from other :"<< x+dx <<","<< y+dy <<"\n";
+		//std::cout << "spreading from other :"<< x+dx <<","<< y+dy <<"\n";
 		//std::thread threadThere(&Source::spreadFrom, (*it).first, x+dx,y+dy);
 		//threadThere.detach();
 		(*it).first->spreadFrom(x+dx,y+dy);
 	}
 	rootMutex.unlock();
-	std::cout << "rootMutex released\n";
+	//std::cout << "rootMutex released\n";
 }
 
 void Engine::removeRootDirection(int x, int y, Direction direction) {
@@ -321,10 +321,6 @@ void Engine::removeRootDirectionThread(int x, int y, Direction direction) {
 	// because you just severed a connection
 	auto mySources = *getRootSources(x,y);
 	for( auto it=mySources.begin(); it!=mySources.end(); it++ ) {	// update the roots starting from
-		//std::thread threadHere (&Source::killFrom, (*it).first, x,y);
-		//std::thread threadThere(&Source::killFrom, (*it).first, x+dx,y+dy);
-		//threadHere.detach();
-		//threadThere.detach();
 		(*it).first->killFrom(x,y);									// this field
 		(*it).first->killFrom(x+dx,y+dy);							// and the other
 	}

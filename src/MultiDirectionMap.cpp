@@ -6,10 +6,12 @@ FourDirectionMap::FourDirectionMap() {
 }
 
 void FourDirectionMap::clear(){
-	std::lock_guard<std::mutex> lockGuard(engine.rootDirectionMutex);
 	for(int i=0; i<Engine::WIDTH*Engine::HEIGHT; i++) {
 		for(int j=0; j<4; j++)
+		{
+			std::lock_guard<std::mutex> lockGuard(directionMutexes[i]);
 			directions[i][j] = false;
+		}
 	}
 	//std::fill(directions, directions+(Engine::WIDTH*Engine::HEIGHT)*4, false);
 }
@@ -40,21 +42,21 @@ bool FourDirectionMap::checkDirection(int x, int y, Direction direction)
 {
 	int index = directionToIndex(direction);
 	if( index == -1 ) return false;
-	std::lock_guard<std::mutex> lockGuard(engine.rootDirectionMutex);
+	std::lock_guard<std::mutex> lockGuard(directionMutexes[x+y*Engine::WIDTH]);
 	return directions[x+y*Engine::WIDTH][directionToIndex(direction)];
 }
 
 void FourDirectionMap::addDirection(int x, int y, Direction direction) {
 	int index = directionToIndex(direction);
 	if( index == -1 ) return;
-	std::lock_guard<std::mutex> lockGuard(engine.rootDirectionMutex);
+	std::lock_guard<std::mutex> lockGuard(directionMutexes[x+y*Engine::WIDTH]);
 	directions[x+y*Engine::WIDTH][directionToIndex(direction)] = true;
 }
 
 void FourDirectionMap::removeDirection(int x, int y, Direction direction) {
 	int index = directionToIndex(direction);
 	if( index == -1 ) return;
-	std::lock_guard<std::mutex> lockGuard(engine.rootDirectionMutex);
+	std::lock_guard<std::mutex> lockGuard(directionMutexes[x+y*Engine::WIDTH]);
 	directions[x+y*Engine::WIDTH][directionToIndex(direction)] = false;
 }
 

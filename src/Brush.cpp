@@ -95,9 +95,11 @@ void Brush::setDirection(int xCenter, int yCenter, Player* player, Direction dir
 			if( distance > condition ) continue;				// if it's larger than the allowed radius -> skip
 															// else set the direction on this field
 			player->setDirection(xPos,yPos, direction);
-			//engine.addRootDirection(xPos,yPos, direction);
+			/*
+			//engine.removeRootDirection(xPos,yPos, direction);
 			if( direction == NEUTRAL )
 				engine.clearRootField(xPos,yPos);
+			*/
 		}
 }
 

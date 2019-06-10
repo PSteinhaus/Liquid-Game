@@ -12,6 +12,7 @@ class FourDirectionMap : MultiDirectionMap
 {
 private:
 	bool directions [Engine::WIDTH*Engine::HEIGHT][4];
+	std::mutex directionMutexes [Engine::WIDTH*Engine::HEIGHT];
 	const int getTilePosition(int x, int y);
 public:
 	FourDirectionMap();
